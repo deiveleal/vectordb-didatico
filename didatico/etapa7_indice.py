@@ -76,7 +76,12 @@ def _indice_vazio(qdrant: QdrantClient) -> bool:
                for t in config.TEMAS)
 
 
-def run(qdrant: QdrantClient | None = None) -> dict[str, int]:
+def run(qdrant: QdrantClient | None = None, modelo: TextEmbedding | None = None,
+        somente: set[str] | None = None) -> dict[str, int]:
+    """Indexa os chunks novos ou mudados. A API passa o Qdrant e o modelo que
+    ja tem abertos: no modo local, um segundo QdrantClient na mesma pasta falha.
+    `somente` restringe a estes arxiv_id: uma insercao pela UI indexa o artigo
+    dela, e nao o que mais estiver pendente (isso fica para o pipeline)."""
     fechar = qdrant is None
     qdrant = qdrant or abrir_qdrant()
     try:
@@ -86,7 +91,8 @@ def run(qdrant: QdrantClient | None = None) -> dict[str, int]:
             # compose down -v): confiar no estado deixaria a busca vazia
             logger.warning("Indice vazio apesar do estado salvo -- reindexando tudo")
             estado = {}
-        arquivos = sorted(config.CHUNKS.glob("*.jsonl"))
+        arquivos = [a for a in sorted(config.CHUNKS.glob("*.jsonl"))
+                    if somente is None or a.stem in somente]
         pendentes = [(a, h) for a in arquivos if estado.get(a.stem) != (h := _hash(a))]
         contagem: Counter[str] = Counter(ja_indexados=len(arquivos) - len(pendentes))
         if not pendentes:
@@ -94,7 +100,7 @@ def run(qdrant: QdrantClient | None = None) -> dict[str, int]:
             return dict(contagem)
 
         garantir_collections(qdrant)
-        modelo = carregar_modelo_embedding()
+        modelo = modelo or carregar_modelo_embedding()
         for arquivo, h in pendentes:
             chunks = ler_jsonl(arquivo)
             arxiv_id = arquivo.stem

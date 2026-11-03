@@ -158,10 +158,12 @@ def caminho_chunks(arxiv_id: str):
     return config.CHUNKS / f"{arxiv_id}.jsonl"
 
 
-def run(refazer: bool = False) -> dict[str, int]:
+def run(refazer: bool = False, somente: set[str] | None = None) -> dict[str, int]:
     contagem: Counter[str] = Counter()
     chunker: Chunker | None = None          # so carrega o tokenizador se precisar
     for artigo in ler_jsonl(ARQUIVO_GOLD):
+        if somente is not None and artigo["arxiv_id"] not in somente:
+            continue
         documento = localizar_documento(artigo)
         if documento is None or not caminho_secoes(documento).exists():
             contagem["sem_texto"] += 1      # etapa 4 ou 5 ainda nao rodou para ele

@@ -5,9 +5,12 @@ O HTML abaixo imita o do arXiv (mesmas classes e ids), reduzido ao minimo.
 
 import datetime as dt
 
+import pymupdf
 import pytest
 
-from didatico.etapa2_silver import juntar, ler_listagem, ler_pagina_artigo
+from didatico.etapa1_bronze import id_do_pdf
+from didatico.etapa2_silver import (abstract_do_pdf, juntar, ler_listagem, ler_pagina_artigo,
+                                    titulo_do_pdf)
 from didatico.etapa3_gold import classificar_tema, e_artigo_novo
 from didatico.etapa5_texto import blocos_do_html, limpar
 from didatico.etapa6_chunks import frases
@@ -118,8 +121,8 @@ def test_artigo_novo():
     assert not e_artigo_novo({**base, "data_v1": "2026-10-01"}, hoje)          # velho
     assert not e_artigo_novo({"tipo_anuncio": "replacement", "n_versoes": None,
                               "data_v1": None}, hoje)
-    assert e_artigo_novo({"tipo_anuncio": "link", "n_versoes": 3,
-                          "data_v1": "2020-01-01"}, hoje)                     # link entra
+    assert e_artigo_novo({"tipo_anuncio": "link", "n_versoes": 3, "data_v1": "2020-01-01",
+                          "inserido_manualmente": True}, hoje)               # pedido entra
 
 
 def test_html_secoes_formulas_e_descartes():
@@ -167,3 +170,43 @@ def test_detectar_idioma(pergunta, idioma):
 def test_glossario():
     assert aplicar_glossario("checagem de fatos com geração aumentada por recuperação") == \
         "fact checking com retrieval-augmented generation"
+
+
+def _pdf(carimbo: str | None = None) -> bytes:
+    """PDF de uma pagina com titulo grande, abstract e introducao."""
+    pdf = pymupdf.open()
+    pagina = pdf.new_page()
+    pagina.insert_text((72, 80), "Grounded Answers for Notes", fontsize=20)
+    pagina.insert_text((72, 120), "Abstract", fontsize=12)
+    pagina.insert_text((72, 140), "We retrieve passages and ground", fontsize=10)
+    pagina.insert_text((72, 154), "each answer in evidence.", fontsize=10)
+    pagina.insert_text((72, 190), "1 Introduction", fontsize=12)
+    pagina.insert_text((72, 210), "Body text that is not the abstract.", fontsize=10)
+    if carimbo:
+        pagina.insert_text((20, 700), carimbo, fontsize=8)
+    return pdf.tobytes()
+
+
+def test_pdf_titulo_e_abstract():
+    with pymupdf.open(stream=_pdf(), filetype="pdf") as pdf:
+        assert titulo_do_pdf(pdf) == "Grounded Answers for Notes"
+        assert abstract_do_pdf(pdf) == "We retrieve passages and ground each answer in evidence."
+
+
+def test_id_do_pdf_usa_o_carimbo_do_arxiv_ou_o_hash():
+    assert id_do_pdf(_pdf("arXiv:2610.40927v1 [cs.AI] 29 Oct 2026")) == "2610.40927"
+    conteudo = _pdf()             # cada PDF gerado tem data e id proprios: reusar os bytes
+    assert id_do_pdf(conteudo).startswith("local-")
+    assert id_do_pdf(conteudo) == id_do_pdf(conteudo)
+
+
+def test_juntar_prioriza_metadados_e_guarda_o_pdf_enviado():
+    listado, _ = ler_listagem(LISTAGEM, "cs.CL")
+    enviado = {**listado, "titulo": "titulo tirado do PDF", "tipo_anuncio": "upload",
+               "listado_em": [], "data_anuncio": None,
+               "pdf_enviado": "bronze/uploads/2610.00001.pdf"}
+    (linha,) = juntar([enviado, listado])
+    assert linha["titulo"] == "Retrieval-Augmented Agents"      # da listagem
+    assert linha["pdf_enviado"] == "bronze/uploads/2610.00001.pdf"
+    assert linha["inserido_manualmente"] is True
+    assert linha["data_anuncio"] == "2026-11-02"

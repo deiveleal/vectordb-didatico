@@ -1,9 +1,11 @@
 """Pecas pequenas que todas as etapas usam: HTTP educado, ids do arXiv, JSONL."""
 
+import fcntl
 import json
 import logging
 import re
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterable, Iterator
 
@@ -86,6 +88,35 @@ def gravar_jsonl(caminho: Path, linhas: Iterable[dict]) -> int:
             n += 1
     temporario.replace(caminho)
     return n
+
+
+@contextmanager
+def trava_de_escrita() -> Iterator[None]:
+    """Um escritor por vez em data/, entre PROCESSOS.
+
+    O pipeline pela linha de comando e a ingestao pela API (aba "Inserir" da
+    UI) reescrevem os mesmos arquivos (silver, gold, chunks). Dois ao mesmo
+    tempo perderiam linhas um do outro. flock e uma trava do sistema
+    operacional num arquivo: o segundo espera o primeiro terminar, e ela se
+    solta sozinha se o processo morrer.
+    """
+    config.DADOS.mkdir(parents=True, exist_ok=True)
+    with (config.DADOS / ".trava_escrita").open("w") as arquivo:
+        if not _tentar_travar(arquivo):
+            logger.info("Outro processo esta gravando em data/ -- esperando terminar")
+            fcntl.flock(arquivo, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(arquivo, fcntl.LOCK_UN)
+
+
+def _tentar_travar(arquivo) -> bool:
+    try:
+        fcntl.flock(arquivo, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return True
+    except BlockingIOError:
+        return False
 
 
 def em_lotes(itens: list, tamanho: int) -> Iterator[list]:

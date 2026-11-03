@@ -2,12 +2,13 @@
 
 1. So artigo novo: v1, anunciado ate JANELA_ARTIGO_NOVO_DIAS dias atras.
    Fica de fora o bloco "Replacement submissions" da listagem (artigo antigo
-   com versao nova). Excecao: artigo pedido por link entra mesmo antigo ou
-   revisado -- quem passou o link quer aquele artigo.
+   com versao nova). Excecao: artigo pedido explicitamente (link ou PDF
+   enviado) entra mesmo antigo ou revisado -- quem pediu quer aquele artigo.
 2. So os temas de interesse, por palavras em titulo + abstract, na ordem de
    prioridade RAG > Agents > LLM: artigo de RAG que tambem fala de LLM fica so
-   em RAG. Sem tema nenhum, fica de fora (inclusive o pedido por link: ele
-   precisa de um tema para saber em que collection entrar).
+   em RAG. Sem tema nenhum, fica de fora -- a nao ser que quem inseriu tenha
+   escolhido o tema (bronze/temas_manuais.json): a escolha humana vale mais
+   que a heuristica.
 
 E a mesma classificacao do projeto original (src/load_gold.py), copiada de
 proposito: e a regra de negocio, e o resto do pipeline depende dela.
@@ -22,11 +23,13 @@ Uso: python -m didatico.etapa3_gold
 """
 
 import datetime as dt
+import json
 import logging
 import re
 from collections import Counter
 
 from didatico import config
+from didatico.etapa1_bronze import TEMAS_MANUAIS
 from didatico.etapa2_silver import ARQUIVO as ARQUIVO_SILVER
 from didatico.util import configurar_log, gravar_jsonl, ler_jsonl
 
@@ -65,7 +68,7 @@ def classificar_tema(texto: str) -> tuple[str, str] | None:
 
 
 def e_artigo_novo(artigo: dict, hoje: dt.date) -> bool:
-    if artigo["tipo_anuncio"] == "link":
+    if artigo.get("inserido_manualmente"):
         return True
     if artigo["n_versoes"] != 1 or not artigo["data_v1"]:
         return False
@@ -77,21 +80,28 @@ def run(hoje: dt.date | None = None) -> dict[str, int]:
     hoje = hoje or dt.date.today()
     silver = ler_jsonl(ARQUIVO_SILVER)
     novos = [a for a in silver if e_artigo_novo(a, hoje)]
+    temas_manuais = json.loads(TEMAS_MANUAIS.read_text()) if TEMAS_MANUAIS.exists() else {}
 
     selecionados = []
     for artigo in novos:
-        if (classificacao := classificar_tema(f"{artigo['titulo']} {artigo['abstract']}")) is None:
-            if artigo["tipo_anuncio"] == "link":
-                logger.warning("%s (pedido por link) nao fala de RAG, agentes nem LLM -- fora",
-                               artigo["arxiv_id"])
+        arxiv_id = artigo["arxiv_id"]
+        if arxiv_id in temas_manuais:
+            tema, evidencia = temas_manuais[arxiv_id], "escolhido na insercao"
+        elif classificacao := classificar_tema(f"{artigo['titulo']} {artigo['abstract']}"):
+            tema, evidencia = classificacao
+        else:
+            if artigo.get("inserido_manualmente"):
+                logger.warning("%s (inserido) nao fala de RAG, agentes nem LLM -- fora; "
+                               "escolha o tema na insercao para incluir", arxiv_id)
             continue
-        tema, evidencia = classificacao
+        do_arxiv = not arxiv_id.startswith("local-")
         selecionados.append({
             **artigo,
             "tema": tema,
             "evidencia": evidencia,   # o trecho que decidiu o tema, para auditar
-            "url": f"{config.SITE}/abs/{artigo['arxiv_id']}",
-            "pdf_url": f"{config.SITE}/pdf/{artigo['arxiv_id']}",
+            # PDF enviado sem id do arXiv nao tem pagina la; a API serve o arquivo
+            "url": f"{config.SITE}/abs/{arxiv_id}" if do_arxiv else f"/artigos/{arxiv_id}/documento",
+            "pdf_url": f"{config.SITE}/pdf/{arxiv_id}" if do_arxiv else f"/artigos/{arxiv_id}/documento",
         })
 
     # upsert: o que ja estava na gold fica; o que veio agora entra ou substitui

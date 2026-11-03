@@ -6,6 +6,7 @@ gerado do LaTeX pelo LaTeXML. Esse HTML ja vem com a estrutura marcada --
 com classes proprias --, que e exatamente o que o projeto original pede ao
 GROBID para reconstruir a partir do PDF. Entao:
 
+- PDF enviado pela UI -> copia o arquivo do bronze (nada a baixar);
 - tem HTML  -> baixa o HTML (melhor estrutura, arquivo menor);
 - nao tem   -> baixa o PDF, e a etapa 5 extrai o texto com PyMuPDF.
 
@@ -18,6 +19,7 @@ Uso: python -m didatico.etapa4_documentos --limite 5
 
 import argparse
 import logging
+import shutil
 from collections import Counter
 from pathlib import Path
 
@@ -38,10 +40,14 @@ def localizar_documento(artigo: dict) -> Path | None:
 
 
 def baixar(cliente: ClienteArxiv, artigo: dict) -> str:
-    """Baixa o documento de um artigo. Devolve "html", "pdf" ou "falha"."""
+    """Obtem o documento de um artigo. Devolve "pdf_enviado", "html", "pdf" ou "falha"."""
     pasta = config.DOCUMENTOS / artigo["tema"]
     pasta.mkdir(parents=True, exist_ok=True)
     arxiv_id = artigo["arxiv_id"]
+
+    if artigo.get("pdf_enviado"):
+        shutil.copyfile(config.DADOS / artigo["pdf_enviado"], pasta / f"{arxiv_id}.pdf")
+        return "pdf_enviado"
 
     if artigo.get("tem_html"):
         resposta = cliente.get(f"{config.SITE}/html/{arxiv_id}")
@@ -60,10 +66,12 @@ def baixar(cliente: ClienteArxiv, artigo: dict) -> str:
     return "falha"
 
 
-def run(limite: int | None = None, cliente: ClienteArxiv | None = None) -> dict[str, int]:
+def run(limite: int | None = None, cliente: ClienteArxiv | None = None,
+        somente: set[str] | None = None) -> dict[str, int]:
     """Baixa o que falta. `limite` = no maximo quantos downloads nesta execucao
-    (cada artigo leva >= 3 s pelo intervalo do arXiv)."""
-    gold = ler_jsonl(ARQUIVO_GOLD)
+    (cada artigo leva >= 3 s pelo intervalo do arXiv). `somente` = so estes
+    arxiv_id (a insercao pela UI trata um artigo, nao a gold inteira)."""
+    gold = [a for a in ler_jsonl(ARQUIVO_GOLD) if somente is None or a["arxiv_id"] in somente]
     faltando = [a for a in gold if localizar_documento(a) is None]
     contagem: Counter[str] = Counter(ja_tinha=len(gold) - len(faltando))
     if limite is not None and len(faltando) > limite:

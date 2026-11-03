@@ -24,8 +24,9 @@ ENV UV_COMPILE_BYTECODE=1 \
     HOME=/tmp
 
 COPY pyproject.toml uv.lock ./
+# --no-default-groups: so as dependencias do projeto (sem dev nem ui).
 # --no-cache: sem ele o cache de download do uv (~480 MB) ficaria na imagem
-RUN uv sync --frozen --no-dev --no-install-project --no-cache
+RUN uv sync --frozen --no-default-groups --no-install-project --no-cache
 
 COPY didatico ./didatico
 

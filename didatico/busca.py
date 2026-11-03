@@ -22,8 +22,10 @@ Uso:
 """
 
 import argparse
+import contextlib
 import logging
 import math
+import threading
 from dataclasses import asdict, dataclass, field
 
 from fastembed.rerank.cross_encoder import TextCrossEncoder
@@ -90,6 +92,11 @@ class Buscador:
         self.embedding = carregar_modelo_embedding()
         self.tradutor = Tradutor()
         self._reranker: TextCrossEncoder | None = None
+        # No modo local o cliente do Qdrant e uma pasta aberta por este
+        # processo: busca (leitura) e insercao (escrita) se revezam por esta
+        # trava. O servidor Qdrant ja lida com acesso concorrente sozinho.
+        self.trava: contextlib.AbstractContextManager = (
+            contextlib.nullcontext() if config.QDRANT_URL else threading.Lock())
 
     @property
     def reranker(self) -> TextCrossEncoder:

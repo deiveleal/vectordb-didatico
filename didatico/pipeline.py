@@ -26,7 +26,7 @@ import time
 
 from didatico import (backup, config, etapa1_bronze, etapa2_silver, etapa3_gold,
                       etapa4_documentos, etapa5_texto, etapa6_chunks, etapa7_indice)
-from didatico.util import ClienteArxiv, configurar_log
+from didatico.util import ClienteArxiv, configurar_log, trava_de_escrita
 
 logger = logging.getLogger("didatico.pipeline")
 
@@ -47,11 +47,13 @@ def run(categorias: list[str], links: list[str], limite: int | None = None,
         etapas.append(("8 backup", backup.run))
 
     inicio = time.monotonic()
-    for nome, etapa in etapas:
-        t = time.monotonic()
-        logger.info("=== etapa %s ===", nome)
-        etapa()
-        logger.info("=== etapa %s: %.1f s ===", nome, time.monotonic() - t)
+    # uma insercao pela API (aba "Inserir" da UI) espera o pipeline terminar, e vice-versa
+    with trava_de_escrita():
+        for nome, etapa in etapas:
+            t = time.monotonic()
+            logger.info("=== etapa %s ===", nome)
+            etapa()
+            logger.info("=== etapa %s: %.1f s ===", nome, time.monotonic() - t)
     logger.info("Pipeline concluido em %.0f s", time.monotonic() - inicio)
 
 

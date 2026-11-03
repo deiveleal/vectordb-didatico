@@ -177,9 +177,11 @@ def extrair(documento: Path) -> tuple[str, list[dict]]:
     return "pdf", blocos_do_pdf(documento)
 
 
-def run(refazer: bool = False) -> dict[str, int]:
+def run(refazer: bool = False, somente: set[str] | None = None) -> dict[str, int]:
     contagem: Counter[str] = Counter()
     for artigo in ler_jsonl(ARQUIVO_GOLD):
+        if somente is not None and artigo["arxiv_id"] not in somente:
+            continue
         documento = localizar_documento(artigo)
         if documento is None:
             contagem["sem_documento"] += 1

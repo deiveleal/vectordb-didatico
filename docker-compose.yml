@@ -1,6 +1,8 @@
 # Versao didatica em contêineres.
 #
-#   docker compose up -d --build                     # Qdrant + API em http://localhost:8100
+#   docker compose up -d --build                     # Qdrant + API + UI
+#     UI:  http://localhost:8501   (busca e insercao de artigos)
+#     API: http://localhost:8100/docs
 #   docker compose run --rm pipeline --categorias cs.CL --limite 5
 #   docker compose run --rm busca "memória de longo prazo para agentes"
 #
@@ -52,6 +54,23 @@ services:
       retries: 3
       # na primeira subida baixa o modelo de embedding (~70 MB)
       start_period: 120s
+
+  # Interface: imagem propria, so Streamlit. Fala com a API pela rede do
+  # compose (API_URL); os links que o NAVEGADOR abre usam a porta publicada.
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Dockerfile
+    image: vectordb-didatico-ui
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      API_URL: http://api:8000
+      API_URL_PUBLICA: http://localhost:8100
+    depends_on:
+      api:
+        condition: service_healthy
 
   # So roda quando chamado: docker compose run --rm pipeline [opcoes]
   # (as opcoes sao as de python -m didatico.pipeline --help)
