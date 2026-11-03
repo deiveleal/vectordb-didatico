@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[oc]
+.venv
+
+# Caches de ferramentas
+.mypy_cache/
+.pytest_cache/
+
+# Dados gerados pelo pipeline e modelos baixados -- recriaveis
+data/
+modelos/
