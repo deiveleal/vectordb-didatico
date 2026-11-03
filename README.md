@@ -84,7 +84,8 @@ uv run python -m didatico.busca "LoRA rank allocation" --json
 uv run python -m didatico.busca "memória de longo prazo para agentes" --sem-traducao
 ```
 
-API (pare-a antes de rodar o pipeline; veja as limitações):
+API (no modo local, pare-a antes de rodar o pipeline; em contêiner não é
+preciso, veja abaixo):
 
 ```bash
 uv run uvicorn didatico.api:app --port 8000
@@ -96,6 +97,41 @@ uv run uvicorn didatico.api:app --port 8000
 
 Cada etapa também roda sozinha, por exemplo
 `uv run python -m didatico.etapa2_silver`. Testes: `uv run pytest`.
+
+## Rodando em contêiner
+
+Só precisa do Docker. Uma imagem serve para tudo (pipeline, busca e API), e o
+`docker-compose.yml` acrescenta o Qdrant como **servidor**. Com ele, a API
+continua no ar enquanto o pipeline indexa, o que o modo local não permite.
+O código é o mesmo: com `QDRANT_URL` definido, `abrir_qdrant()` usa
+`url=` em vez de `path=`.
+
+```bash
+# opcional: contato para o User-Agent do arXiv
+echo 'DIDATICO_USER_AGENT=vectordb-didatico/0.1 (mailto:voce@exemplo.com)' > .env
+
+docker compose up -d --build        # Qdrant + API em http://localhost:8100/docs
+
+# pipeline e busca rodam sob demanda; as opções são as mesmas de cima
+docker compose run --rm pipeline --categorias cs.CL --limite 5
+docker compose run --rm pipeline --links https://arxiv.org/abs/2609.28614
+docker compose run --rm busca "memória de longo prazo para agentes" --rerank
+
+docker compose down                 # para tudo (o índice fica no volume qdrant_data)
+```
+
+- `./data` é montado no contêiner, então as camadas ficam visíveis no host,
+  como fora do Docker. O contêiner roda com o seu UID (`UID`/`GID`,
+  padrão 1000), e os arquivos ficam com você como dono, não com o root.
+- Os modelos (~230 MB) não vão na imagem. São baixados na primeira execução
+  para o volume `modelos` e reaproveitados depois.
+- O painel do Qdrant fica em http://localhost:6433/dashboard.
+- O backup inclui um snapshot de cada collection, gerado pelo próprio Qdrant
+  (`qdrant_snapshots/<tema>.snapshot` dentro do zip).
+- O estado do índice é separado por destino (`indice_estado.json` para o
+  modo local, `indice_estado_servidor.json` para o servidor). Se o volume do
+  Qdrant for apagado (`docker compose down -v`), o pipeline percebe o índice
+  vazio e reindexa tudo.
 
 ## O que cada etapa grava
 

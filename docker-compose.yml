@@ -1,0 +1,71 @@
+# Versao didatica em contêineres.
+#
+#   docker compose up -d --build                     # Qdrant + API em http://localhost:8100
+#   docker compose run --rm pipeline --categorias cs.CL --limite 5
+#   docker compose run --rm busca "memória de longo prazo para agentes"
+#
+# Aqui o Qdrant roda como servidor (QDRANT_URL): fora do Docker o projeto usa
+# o modo local (uma pasta), que so aceita um processo por vez -- com o
+# servidor, a API continua no ar enquanto o pipeline indexa.
+
+x-app: &app
+  build: .
+  image: vectordb-didatico
+  # roda com o seu UID: os arquivos em ./data no host ficam seus, nao do root
+  user: "${UID:-1000}:${GID:-1000}"
+  environment:
+    QDRANT_URL: http://qdrant:6333
+    # os termos de uso do arXiv pedem um contato no User-Agent: defina no .env
+    DIDATICO_USER_AGENT: ${DIDATICO_USER_AGENT:-vectordb-didatico/0.1 (estudo; defina DIDATICO_USER_AGENT)}
+  volumes:
+    - ./data:/app/data          # as camadas ficam visiveis no host, como fora do Docker
+    - modelos:/app/modelos      # modelos baixados uma vez e reaproveitados
+  depends_on:
+    qdrant:
+      condition: service_healthy
+
+services:
+  qdrant:
+    image: qdrant/qdrant:v1.20.0   # mesma versao do qdrant-client do uv.lock
+    restart: unless-stopped
+    ports:
+      - "6433:6333"   # painel em http://localhost:6433/dashboard
+    volumes:
+      - qdrant_data:/qdrant/storage
+    healthcheck:
+      # a imagem nao tem curl; bash com /dev/tcp basta para saber se responde
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/6333 && printf \"GET /readyz HTTP/1.0\\r\\n\\r\\n\" >&3 && grep -q 200 <&3'"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    <<: *app
+    restart: unless-stopped
+    ports:
+      - "8100:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=10)"]
+      interval: 30s
+      timeout: 15s
+      retries: 3
+      # na primeira subida baixa o modelo de embedding (~70 MB)
+      start_period: 120s
+
+  # So roda quando chamado: docker compose run --rm pipeline [opcoes]
+  # (as opcoes sao as de python -m didatico.pipeline --help)
+  pipeline:
+    <<: *app
+    profiles: ["tarefas"]
+    entrypoint: ["python", "-m", "didatico.pipeline"]
+
+  # docker compose run --rm busca "pergunta" [--tema agents -k 3 --rerank]
+  busca:
+    <<: *app
+    profiles: ["tarefas"]
+    entrypoint: ["python", "-m", "didatico.busca"]
+
+volumes:
+  qdrant_data:
+  modelos:

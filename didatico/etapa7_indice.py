@@ -6,8 +6,9 @@ Dois papeis que no original sao servicos Docker, aqui sao bibliotecas:
   proprio processo. O modelo (~70 MB) e baixado uma vez para modelos/;
 - banco vetorial: qdrant-client em MODO LOCAL -- QdrantClient(path=...) grava
   o indice numa pasta, sem servidor. Mesma API do Qdrant de verdade; trocar
-  para servidor e trocar path= por url=. Limite: um processo por vez abre a
-  pasta (nao rode a API e o pipeline ao mesmo tempo).
+  para servidor e trocar path= por url= (e o que QDRANT_URL faz, ver
+  config.py). Limite do modo local: um processo por vez abre a pasta (nao
+  rode a API e o pipeline ao mesmo tempo).
 
 Uma collection por tema (rag, agents, llm), cosseno, 384 dimensoes. O id de
 cada ponto e UUID5(chunk_id): o mesmo chunk sempre cai no mesmo id, entao
@@ -35,7 +36,9 @@ from didatico.util import configurar_log, em_lotes, ler_jsonl
 
 logger = logging.getLogger(__name__)
 
-ESTADO = config.DADOS / "indice_estado.json"
+# Um estado por destino: o que esta no indice local nao esta no servidor.
+ESTADO = config.DADOS / ("indice_estado_servidor.json" if config.QDRANT_URL
+                         else "indice_estado.json")
 NAMESPACE_PONTOS = uuid.uuid5(uuid.NAMESPACE_URL, "arxiv-chunks")
 LOTE = 64
 
@@ -45,6 +48,10 @@ def id_do_ponto(chunk_id: str) -> str:
 
 
 def abrir_qdrant() -> QdrantClient:
+    """Servidor, se QDRANT_URL estiver definido; senao, a pasta data/qdrant.
+    O resto do codigo nao sabe a diferenca: a API do cliente e a mesma."""
+    if config.QDRANT_URL:
+        return QdrantClient(url=config.QDRANT_URL)
     config.QDRANT.mkdir(parents=True, exist_ok=True)
     return QdrantClient(path=str(config.QDRANT))
 
@@ -64,18 +71,28 @@ def _hash(caminho) -> str:
     return hashlib.sha256(caminho.read_bytes()).hexdigest()
 
 
-def run(qdrant: QdrantClient | None = None) -> dict[str, int]:
-    estado: dict[str, str] = json.loads(ESTADO.read_text()) if ESTADO.exists() else {}
-    arquivos = sorted(config.CHUNKS.glob("*.jsonl"))
-    pendentes = [(a, h) for a in arquivos if estado.get(a.stem) != (h := _hash(a))]
-    contagem: Counter[str] = Counter(ja_indexados=len(arquivos) - len(pendentes))
-    if not pendentes:
-        logger.info("Indice: nada novo para indexar (%d artigos ja no indice)", len(estado))
-        return dict(contagem)
+def _indice_vazio(qdrant: QdrantClient) -> bool:
+    return all(not qdrant.collection_exists(t) or qdrant.count(t).count == 0
+               for t in config.TEMAS)
 
+
+def run(qdrant: QdrantClient | None = None) -> dict[str, int]:
     fechar = qdrant is None
     qdrant = qdrant or abrir_qdrant()
     try:
+        estado: dict[str, str] = json.loads(ESTADO.read_text()) if ESTADO.exists() else {}
+        if estado and _indice_vazio(qdrant):
+            # o estado diz "ja indexado", mas o indice foi apagado (ex.: docker
+            # compose down -v): confiar no estado deixaria a busca vazia
+            logger.warning("Indice vazio apesar do estado salvo -- reindexando tudo")
+            estado = {}
+        arquivos = sorted(config.CHUNKS.glob("*.jsonl"))
+        pendentes = [(a, h) for a in arquivos if estado.get(a.stem) != (h := _hash(a))]
+        contagem: Counter[str] = Counter(ja_indexados=len(arquivos) - len(pendentes))
+        if not pendentes:
+            logger.info("Indice: nada novo para indexar (%d artigos ja no indice)", len(estado))
+            return dict(contagem)
+
         garantir_collections(qdrant)
         modelo = carregar_modelo_embedding()
         for arquivo, h in pendentes:

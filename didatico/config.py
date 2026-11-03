@@ -19,6 +19,10 @@ GOLD = DADOS / "gold"              # so os artigos de interesse, com tema
 DOCUMENTOS = DADOS / "documents"   # HTML/PDF do artigo + secoes extraidas
 CHUNKS = DADOS / "chunks"          # trechos prontos para o embedding
 QDRANT = DADOS / "qdrant"          # banco vetorial em modo local (arquivos)
+# Com QDRANT_URL definido (ex.: http://qdrant:6333, no docker compose), usa um
+# servidor Qdrant no lugar da pasta: e o que deixa a API e o pipeline rodarem
+# ao mesmo tempo. Sem ele, modo local.
+QDRANT_URL = os.environ.get("QDRANT_URL") or None
 BACKUP = DADOS / "backup"          # zips das camadas gold, chunks e qdrant
 MODELOS = Path(os.environ.get("DIDATICO_MODELOS", RAIZ / "modelos"))
 

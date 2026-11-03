@@ -98,3 +98,5 @@ def configurar_log() -> None:
                         datefmt="%H:%M:%S")
     # o httpx (usado pelo qdrant-client) loga cada requisicao em INFO
     logging.getLogger("httpx").setLevel(logging.WARNING)
+    # avisa a cada execucao que nao ha HF_TOKEN -- desnecessario: os modelos sao publicos
+    logging.getLogger("huggingface_hub").setLevel(logging.ERROR)

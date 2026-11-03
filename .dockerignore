@@ -1,0 +1,14 @@
+# So o codigo e as dependencias entram na imagem
+.venv
+.git
+__pycache__/
+*.py[oc]
+.mypy_cache/
+.pytest_cache/
+
+# Dados e modelos sao volumes, nao parte da imagem
+data/
+modelos/
+
+tests/
+*.md

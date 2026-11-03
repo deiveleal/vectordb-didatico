@@ -10,8 +10,9 @@ Faz o papel do GROBID no projeto original, em Python:
 - PDF (quando nao ha HTML): PyMuPDF le os blocos de texto de cada pagina, na
   ordem. Bloco de uma linha com cara de titulo numerado ("3 Method",
   "4.2 Results") abre secao; o resto e paragrafo. Para em "References" ou
-  "Appendix". E uma heuristica: funciona bem em artigo LaTeX de uma ou duas
-  colunas, e pior em layout incomum -- por isso o HTML vem primeiro.
+  "Appendix". Artigo sem nenhum titulo numerado sai inteiro como "Body". E
+  uma heuristica: funciona bem em artigo LaTeX de uma ou duas colunas, e pior
+  em layout incomum -- por isso o HTML vem primeiro.
 
 O abstract NAO vem daqui: ja esta na gold (veio da listagem) e a etapa 6 o
 usa como chunk 0.
@@ -117,41 +118,54 @@ def blocos_do_html(html: str) -> list[dict]:
 
 # "3 Method", "4.2 Results and Discussion", "IV. EXPERIMENTS"
 TITULO_NUMERADO = re.compile(r"^((?:\d{1,2}(?:\.\d{1,2})*)|[IVX]{1,4}\.)\s+([A-Z].{1,80})$")
+SO_NUMERO = re.compile(r"\d{1,2}(?:\.\d{1,2})*\.?|[IVX]{1,4}\.")
 FIM_DO_CORPO = re.compile(r"^(references|bibliography|appendix|appendices)\b", re.IGNORECASE)
+# PDF com desenho vetorial fora do padrao gera "MuPDF error: ..." no stderr
+# sem afetar o texto; silenciado para nao poluir o log
+pymupdf.TOOLS.mupdf_display_errors(False)
 
 
 def blocos_do_pdf(caminho: Path) -> list[dict]:
-    blocos: list[dict] = []
-    grupo: str | None = None
-    rotulo: str | None = None
+    """Paragrafos por secao numerada. Artigo sem nenhum titulo numerado (acontece)
+    sai inteiro como uma secao "Body": sem rotulo bom, mas com o texto."""
     with pymupdf.open(caminho) as pdf:
-        for pagina in pdf:
-            # cada bloco: (x0, y0, x1, y1, texto, n_bloco, tipo); tipo 0 = texto
-            for *_, texto, _, tipo in pagina.get_text("blocks", sort=False):
-                if tipo != 0:
-                    continue
-                linhas = [l.strip() for l in texto.splitlines() if l.strip()]
-                if not linhas:
-                    continue
-                if len(linhas) == 1:
-                    linha = linhas[0]
-                    if FIM_DO_CORPO.match(linha):
-                        return blocos
-                    if m := TITULO_NUMERADO.match(linha):
-                        numero, titulo = m.groups()
-                        if "." in numero.rstrip(".") and grupo:   # 4.2 -> subsecao
-                            rotulo = f"{grupo} › {linha}"
-                        else:
-                            grupo = rotulo = f"{numero} {titulo}"
-                        continue
-                if grupo is None:
-                    continue        # antes da 1a secao: titulo, autores, abstract
-                # junta as linhas desfazendo a hifenizacao ("retrie-\nval")
-                paragrafo = re.sub(r"-\n(?=[a-z])", "", "\n".join(linhas)).replace("\n", " ")
-                paragrafo = limpar(paragrafo)
-                if (len(paragrafo.split()) >= MIN_PALAVRAS_PARAGRAFO
-                        and not SECOES_DESCARTADAS.search(grupo)):
-                    blocos.append({"grupo": grupo, "secao": rotulo, "texto": paragrafo})
+        # cada bloco: (x0, y0, x1, y1, texto, n_bloco, tipo); tipo 0 = texto
+        brutos = [b[4] for pagina in pdf for b in pagina.get_text("blocks") if b[6] == 0]
+    return _ler_blocos(brutos, com_titulos=True) or _ler_blocos(brutos, com_titulos=False)
+
+
+def _ler_blocos(brutos: list[str], com_titulos: bool) -> list[dict]:
+    blocos: list[dict] = []
+    grupo: str | None = None if com_titulos else "Body"
+    rotulo: str | None = grupo
+    for texto in brutos:
+        linhas = [l.strip() for l in texto.splitlines() if l.strip()]
+        if not linhas:
+            continue
+        # titulo quebrado em duas linhas: "1" / "INTRODUCTION"
+        if len(linhas) == 2 and SO_NUMERO.fullmatch(linhas[0]):
+            linhas = [f"{linhas[0]} {linhas[1]}"]
+        if len(linhas) == 1:
+            linha = linhas[0]
+            if FIM_DO_CORPO.match(linha):
+                break
+            # 2+ virgulas: afiliacao numerada ("1 Dept., Univ., City"), nao titulo
+            if (com_titulos and (m := TITULO_NUMERADO.match(linha))
+                    and linha.count(",") < 2):
+                numero, titulo = m.groups()
+                if "." in numero.rstrip(".") and grupo:   # 4.2 -> subsecao
+                    rotulo = f"{grupo} › {linha}"
+                else:
+                    grupo = rotulo = f"{numero} {titulo}"
+                continue
+        if grupo is None:
+            continue        # antes da 1a secao: titulo, autores, abstract
+        # junta as linhas desfazendo a hifenizacao ("retrie-\nval")
+        paragrafo = re.sub(r"-\n(?=[a-z])", "", "\n".join(linhas)).replace("\n", " ")
+        paragrafo = limpar(paragrafo)
+        if (len(paragrafo.split()) >= MIN_PALAVRAS_PARAGRAFO
+                and not SECOES_DESCARTADAS.search(grupo)):
+            blocos.append({"grupo": grupo, "secao": rotulo, "texto": paragrafo})
     return blocos
 
 

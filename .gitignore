@@ -10,3 +10,6 @@ __pycache__/
 # Dados gerados pelo pipeline e modelos baixados -- recriaveis
 data/
 modelos/
+
+# Configuracao local do docker compose (ex.: DIDATICO_USER_AGENT com seu contato)
+.env
