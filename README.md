@@ -1,7 +1,8 @@
 # vectordb-didatico
 
-Versão didática do [vectordb_pipeline](../vectordb_pipeline) (desenho em
-`pipeline_vectordb.drawio`): o mesmo caminho, de artigo novo do arXiv até
+Versão didática de um pipeline de ingestão de artigos do arXiv com busca
+semântica, originalmente montado com Docker (Prefect, RustFS, Iceberg,
+GROBID, TEI, LibreTranslate, Qdrant). Aqui é o mesmo caminho, de artigo novo do arXiv até
 busca semântica, em **Python puro**, sem Docker e **sem API para obter os
 artigos**. Os artigos vêm das páginas HTML que qualquer pessoa abre no
 navegador.
