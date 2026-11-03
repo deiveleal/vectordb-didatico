@@ -25,7 +25,7 @@ palavras erraria para mais ou para menos, e o modelo corta sem avisar.
 
     data/chunks/<arxiv_id>.jsonl   um chunk por linha
 
-Uso: python -m didatico.etapa6_chunks
+Uso: python -m src.etapa6_chunks
 """
 
 import json
@@ -36,11 +36,11 @@ from dataclasses import dataclass, field
 
 from tokenizers import Tokenizer
 
-from didatico import config
-from didatico.etapa3_gold import ARQUIVO as ARQUIVO_GOLD
-from didatico.etapa4_documentos import localizar_documento
-from didatico.etapa5_texto import caminho_secoes
-from didatico.util import configurar_log, gravar_jsonl, ler_jsonl
+from src import config
+from src.etapa3_gold import ARQUIVO as ARQUIVO_GOLD
+from src.etapa4_documentos import localizar_documento
+from src.etapa5_texto import caminho_secoes
+from src.util import configurar_log, gravar_jsonl, ler_jsonl
 
 logger = logging.getLogger(__name__)
 

@@ -28,7 +28,7 @@ Saida, ao lado do documento -- um JSON legivel:
 `grupo` e a secao de primeiro nivel (um chunk nunca atravessa grupos);
 `secao` inclui a subsecao, quando ha.
 
-Uso: python -m didatico.etapa5_texto
+Uso: python -m src.etapa5_texto
 """
 
 import json
@@ -40,9 +40,9 @@ from pathlib import Path
 import pymupdf
 from bs4 import BeautifulSoup, Tag
 
-from didatico.etapa3_gold import ARQUIVO as ARQUIVO_GOLD
-from didatico.etapa4_documentos import localizar_documento
-from didatico.util import configurar_log, ler_jsonl
+from src.etapa3_gold import ARQUIVO as ARQUIVO_GOLD
+from src.etapa4_documentos import localizar_documento
+from src.util import configurar_log, ler_jsonl
 
 logger = logging.getLogger(__name__)
 

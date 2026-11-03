@@ -23,7 +23,7 @@ idempotente (rodar duas vezes da o mesmo arquivo).
 
     data/silver/artigos.jsonl
 
-Uso: python -m didatico.etapa2_silver
+Uso: python -m src.etapa2_silver
 """
 
 import datetime as dt
@@ -36,8 +36,8 @@ from pathlib import Path
 import pymupdf
 from bs4 import BeautifulSoup, Tag
 
-from didatico import config
-from didatico.util import configurar_log, gravar_jsonl
+from src import config
+from src.util import configurar_log, gravar_jsonl
 
 logger = logging.getLogger(__name__)
 

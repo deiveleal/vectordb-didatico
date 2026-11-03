@@ -1,7 +1,7 @@
 """API (FastAPI): busca semantica e insercao de artigos.
 
 E a unica porta de entrada da UI (ui/app.py), como no desenho de arquitetura:
-a UI nao importa nada de didatico/, so faz HTTP.
+a UI nao importa nada de src/, so faz HTTP.
 
 Busca (so recuperacao: devolve artigos e trechos, nao gera resposta com LLM)
     GET  /search?pergunta=...&tema=rag&k=5&trechos_por_artigo=2&rerank=true&traduzir=true
@@ -16,7 +16,7 @@ Insercao (assincrona: responde na hora com um id; ver ingestao.py)
     GET  /ingestoes        as mais recentes
 
 Rodando:
-    uv run uvicorn didatico.api:app --port 8000
+    uv run uvicorn src.api:app --port 8000
     abra http://localhost:8000/docs para testar no navegador
 
 Os modelos e o Qdrant sao abertos uma vez, quando a API sobe (lifespan), e
@@ -33,12 +33,12 @@ from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
-from didatico import config
-from didatico.busca import Buscador
-from didatico.etapa3_gold import ARQUIVO as ARQUIVO_GOLD
-from didatico.etapa4_documentos import localizar_documento
-from didatico.ingestao import Ingestoes
-from didatico.util import ler_jsonl
+from src import config
+from src.busca import Buscador
+from src.etapa3_gold import ARQUIVO as ARQUIVO_GOLD
+from src.etapa4_documentos import localizar_documento
+from src.ingestao import Ingestoes
+from src.util import ler_jsonl
 
 Tema = Literal["rag", "agents", "llm"]
 MAX_BYTES_PDF = 50 * 1024 * 1024

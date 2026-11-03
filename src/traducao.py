@@ -28,7 +28,7 @@ from pathlib import Path
 
 import requests
 
-from didatico import config
+from src import config
 
 logger = logging.getLogger(__name__)
 

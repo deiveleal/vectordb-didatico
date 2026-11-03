@@ -1,6 +1,6 @@
 """Interface (Streamlit): buscar artigos e inserir artigos novos.
 
-So conversa com a API por HTTP -- nao importa nada de didatico/, como
+So conversa com a API por HTTP -- nao importa nada de src/, como
 qualquer outro cliente faria. E a seta "UI -> API" do desenho de arquitetura.
 
 Duas abas:

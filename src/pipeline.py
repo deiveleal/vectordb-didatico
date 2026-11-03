@@ -8,27 +8,27 @@ Se uma etapa falhar, corrija e rode de novo -- recomeca de onde parou.
 
 Exemplos:
     # listagens do dia das categorias padrao (cs.CL, cs.AI, cs.LG)
-    uv run python -m didatico.pipeline
+    uv run python -m src.pipeline
 
     # primeira vez: so 5 documentos, para ver tudo funcionando em ~1 minuto
-    uv run python -m didatico.pipeline --categorias cs.CL --limite 5
+    uv run python -m src.pipeline --categorias cs.CL --limite 5
 
     # so artigos especificos, por link (sem listagem)
-    uv run python -m didatico.pipeline --links https://arxiv.org/abs/2609.28614 2609.28653
+    uv run python -m src.pipeline --links https://arxiv.org/abs/2609.28614 2609.28653
 
 Para rodar todo dia, agende no cron (ex.: 21h, depois do anuncio do arXiv):
-    0 21 * * 1-5  cd /caminho/vectordb_didatico && uv run python -m didatico.pipeline
+    0 21 * * 1-5  cd /caminho/vectordb_didatico && uv run python -m src.pipeline
 """
 
 import argparse
 import logging
 import time
 
-from didatico import (backup, config, etapa1_bronze, etapa2_silver, etapa3_gold,
+from src import (backup, config, etapa1_bronze, etapa2_silver, etapa3_gold,
                       etapa4_documentos, etapa5_texto, etapa6_chunks, etapa7_indice)
-from didatico.util import ClienteArxiv, configurar_log, trava_de_escrita
+from src.util import ClienteArxiv, configurar_log, trava_de_escrita
 
-logger = logging.getLogger("didatico.pipeline")
+logger = logging.getLogger("src.pipeline")
 
 
 def run(categorias: list[str], links: list[str], limite: int | None = None,

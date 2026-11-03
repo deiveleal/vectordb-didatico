@@ -15,7 +15,7 @@ O indice entra de um de dois jeitos:
 
     data/backup/AAAA-MM-DD_HHMMSS.zip
 
-Uso: python -m didatico.backup
+Uso: python -m src.backup
 """
 
 import datetime as dt
@@ -24,9 +24,9 @@ import zipfile
 
 import requests
 
-from didatico import config
-from didatico.etapa7_indice import abrir_qdrant
-from didatico.util import configurar_log
+from src import config
+from src.etapa7_indice import abrir_qdrant
+from src.util import configurar_log
 
 logger = logging.getLogger(__name__)
 

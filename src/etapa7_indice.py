@@ -19,7 +19,7 @@ data/indice_estado.json: arquivo igual e pulado; arquivo mudou (chunker
 novo, texto extraido de novo), os pontos antigos do artigo saem e os novos
 entram -- um artigo que passou de 20 para 18 chunks nao deixa 2 orfaos.
 
-Uso: python -m didatico.etapa7_indice
+Uso: python -m src.etapa7_indice
 """
 
 import hashlib
@@ -31,8 +31,8 @@ from collections import Counter
 from fastembed import TextEmbedding
 from qdrant_client import QdrantClient, models
 
-from didatico import config
-from didatico.util import configurar_log, em_lotes, ler_jsonl
+from src import config
+from src.util import configurar_log, em_lotes, ler_jsonl
 
 logger = logging.getLogger(__name__)
 

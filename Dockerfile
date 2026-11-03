@@ -28,7 +28,7 @@ COPY pyproject.toml uv.lock ./
 # --no-cache: sem ele o cache de download do uv (~480 MB) ficaria na imagem
 RUN uv sync --frozen --no-default-groups --no-install-project --no-cache
 
-COPY didatico ./didatico
+COPY src ./src
 
 # pastas que viram volume: criadas aqui com permissao para qualquer usuario,
 # porque o compose roda com o UID de quem chamou (para os arquivos de data/
@@ -36,4 +36,4 @@ COPY didatico ./didatico
 RUN mkdir -p /app/data /app/modelos && chmod 777 /app/data /app/modelos
 
 EXPOSE 8000
-CMD ["uvicorn", "didatico.api:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.api:app", "--host", "0.0.0.0", "--port", "8000"]

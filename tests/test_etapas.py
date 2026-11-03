@@ -8,14 +8,14 @@ import datetime as dt
 import pymupdf
 import pytest
 
-from didatico.etapa1_bronze import id_do_pdf
-from didatico.etapa2_silver import (abstract_do_pdf, juntar, ler_listagem, ler_pagina_artigo,
+from src.etapa1_bronze import id_do_pdf
+from src.etapa2_silver import (abstract_do_pdf, juntar, ler_listagem, ler_pagina_artigo,
                                     titulo_do_pdf)
-from didatico.etapa3_gold import classificar_tema, e_artigo_novo
-from didatico.etapa5_texto import blocos_do_html, limpar
-from didatico.etapa6_chunks import frases
-from didatico.traducao import aplicar_glossario, detectar_idioma
-from didatico.util import normalizar_id
+from src.etapa3_gold import classificar_tema, e_artigo_novo
+from src.etapa5_texto import blocos_do_html, limpar
+from src.etapa6_chunks import frases
+from src.traducao import aplicar_glossario, detectar_idioma
+from src.util import normalizar_id
 
 LISTAGEM = """
 <h3>Showing new listings for Monday, 2 November 2026</h3>

@@ -14,7 +14,7 @@ Artigo que ja tem documento e pulado: rodar de novo so baixa o que falta.
 
     data/documents/<tema>/<arxiv_id>.html   ou   .pdf
 
-Uso: python -m didatico.etapa4_documentos --limite 5
+Uso: python -m src.etapa4_documentos --limite 5
 """
 
 import argparse
@@ -23,9 +23,9 @@ import shutil
 from collections import Counter
 from pathlib import Path
 
-from didatico import config
-from didatico.etapa3_gold import ARQUIVO as ARQUIVO_GOLD
-from didatico.util import ClienteArxiv, configurar_log, ler_jsonl
+from src import config
+from src.etapa3_gold import ARQUIVO as ARQUIVO_GOLD
+from src.util import ClienteArxiv, configurar_log, ler_jsonl
 
 logger = logging.getLogger(__name__)
 

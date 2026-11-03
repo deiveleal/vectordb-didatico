@@ -17,8 +17,8 @@ O resultado e por ARTIGO: titulo, link, tema, score do melhor trecho e os
 melhores trechos dele, cada um com a secao de onde veio.
 
 Uso:
-    python -m didatico.busca "memória de longo prazo para agentes"
-    python -m didatico.busca "reward hacking in research agents" --tema agents -k 3 --rerank
+    python -m src.busca "memória de longo prazo para agentes"
+    python -m src.busca "reward hacking in research agents" --tema agents -k 3 --rerank
 """
 
 import argparse
@@ -31,10 +31,10 @@ from dataclasses import asdict, dataclass, field
 from fastembed.rerank.cross_encoder import TextCrossEncoder
 from qdrant_client import QdrantClient, models
 
-from didatico import config
-from didatico.etapa7_indice import abrir_qdrant, carregar_modelo_embedding
-from didatico.traducao import Tradutor
-from didatico.util import configurar_log
+from src import config
+from src.etapa7_indice import abrir_qdrant, carregar_modelo_embedding
+from src.traducao import Tradutor
+from src.util import configurar_log
 
 logger = logging.getLogger(__name__)
 

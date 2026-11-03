@@ -26,10 +26,10 @@ import threading
 import uuid
 from dataclasses import asdict, dataclass, field
 
-from didatico import (config, etapa1_bronze, etapa2_silver, etapa3_gold, etapa4_documentos,
+from src import (config, etapa1_bronze, etapa2_silver, etapa3_gold, etapa4_documentos,
                       etapa5_texto, etapa6_chunks, etapa7_indice)
-from didatico.busca import Buscador
-from didatico.util import ClienteArxiv, ler_jsonl, normalizar_id, trava_de_escrita
+from src.busca import Buscador
+from src.util import ClienteArxiv, ler_jsonl, normalizar_id, trava_de_escrita
 
 logger = logging.getLogger(__name__)
 

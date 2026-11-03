@@ -73,17 +73,17 @@ services:
         condition: service_healthy
 
   # So roda quando chamado: docker compose run --rm pipeline [opcoes]
-  # (as opcoes sao as de python -m didatico.pipeline --help)
+  # (as opcoes sao as de python -m src.pipeline --help)
   pipeline:
     <<: *app
     profiles: ["tarefas"]
-    entrypoint: ["python", "-m", "didatico.pipeline"]
+    entrypoint: ["python", "-m", "src.pipeline"]
 
   # docker compose run --rm busca "pergunta" [--tema agents -k 3 --rerank]
   busca:
     <<: *app
     profiles: ["tarefas"]
-    entrypoint: ["python", "-m", "didatico.busca"]
+    entrypoint: ["python", "-m", "src.busca"]
 
 volumes:
   qdrant_data:

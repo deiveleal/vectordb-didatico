@@ -19,7 +19,7 @@ linha, nao duplica.
 
     data/gold/artigos.jsonl
 
-Uso: python -m didatico.etapa3_gold
+Uso: python -m src.etapa3_gold
 """
 
 import datetime as dt
@@ -28,10 +28,10 @@ import logging
 import re
 from collections import Counter
 
-from didatico import config
-from didatico.etapa1_bronze import TEMAS_MANUAIS
-from didatico.etapa2_silver import ARQUIVO as ARQUIVO_SILVER
-from didatico.util import configurar_log, gravar_jsonl, ler_jsonl
+from src import config
+from src.etapa1_bronze import TEMAS_MANUAIS
+from src.etapa2_silver import ARQUIVO as ARQUIVO_SILVER
+from src.util import configurar_log, gravar_jsonl, ler_jsonl
 
 logger = logging.getLogger(__name__)
 

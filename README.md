@@ -76,28 +76,28 @@ export DIDATICO_USER_AGENT="vectordb-didatico/0.1 (mailto:voce@exemplo.com)"
 
 # Primeira vez: uma categoria e só 5 documentos (~1 minuto, contando o
 # download dos modelos)
-uv run python -m didatico.pipeline --categorias cs.CL --limite 5
+uv run python -m src.pipeline --categorias cs.CL --limite 5
 
 # Artigos específicos, por link (sem listagem)
-uv run python -m didatico.pipeline --links https://arxiv.org/abs/2609.28614 2609.28653
+uv run python -m src.pipeline --links https://arxiv.org/abs/2609.28614 2609.28653
 
 # Tudo das categorias padrão (cs.CL, cs.AI, cs.LG); ~3 s por documento
-uv run python -m didatico.pipeline
+uv run python -m src.pipeline
 ```
 
 Buscar:
 
 ```bash
-uv run python -m didatico.busca "memória de longo prazo para agentes"
-uv run python -m didatico.busca "reward hacking" --tema agents -k 3 --rerank
-uv run python -m didatico.busca "LoRA rank allocation" --json
-uv run python -m didatico.busca "memória de longo prazo para agentes" --sem-traducao
+uv run python -m src.busca "memória de longo prazo para agentes"
+uv run python -m src.busca "reward hacking" --tema agents -k 3 --rerank
+uv run python -m src.busca "LoRA rank allocation" --json
+uv run python -m src.busca "memória de longo prazo para agentes" --sem-traducao
 ```
 
 API e interface, cada uma num terminal:
 
 ```bash
-uv run uvicorn didatico.api:app --port 8000     # http://localhost:8000/docs
+uv run uvicorn src.api:app --port 8000     # http://localhost:8000/docs
 uv run streamlit run ui/app.py                  # http://localhost:8501
 ```
 
@@ -116,7 +116,7 @@ não há essa restrição (veja abaixo).
 | `GET /health` | status, trechos por tema, inserções na fila |
 
 Cada etapa também roda sozinha, por exemplo
-`uv run python -m didatico.etapa2_silver`. Testes: `uv run pytest`.
+`uv run python -m src.etapa2_silver`. Testes: `uv run pytest`.
 
 ## Rodando em contêiner
 

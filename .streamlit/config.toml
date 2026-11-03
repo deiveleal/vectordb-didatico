@@ -1,6 +1,6 @@
 # Lido pelo Streamlit quando roda da raiz do projeto (uv run streamlit run ui/app.py)
 [server]
-# o mesmo limite da API (MAX_BYTES_PDF em didatico/api.py)
+# o mesmo limite da API (MAX_BYTES_PDF em src/api.py)
 maxUploadSize = 50
 
 [browser]

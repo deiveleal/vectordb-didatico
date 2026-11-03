@@ -1,5 +1,5 @@
 # Imagem da UI, separada da API: so Streamlit + requests, nada de modelos nem
-# de didatico/. E o lado "cliente" do desenho -- conversa com a API por HTTP.
+# de src/. E o lado "cliente" do desenho -- conversa com a API por HTTP.
 FROM python:3.12-slim
 
 COPY --from=ghcr.io/astral-sh/uv:0.9.11 /uv /bin/uv

@@ -23,7 +23,7 @@ baixar nada outra vez.
 Arquivo que ja existe nao e baixado de novo: rodar duas vezes no mesmo dia
 nao repete requisicoes ao arXiv.
 
-Uso: python -m didatico.etapa1_bronze --categorias cs.CL --links 2609.28614
+Uso: python -m src.etapa1_bronze --categorias cs.CL --links 2609.28614
 """
 
 import argparse
@@ -36,8 +36,8 @@ from pathlib import Path
 
 import pymupdf
 
-from didatico import config
-from didatico.util import ClienteArxiv, configurar_log, normalizar_id
+from src import config
+from src.util import ClienteArxiv, configurar_log, normalizar_id
 
 logger = logging.getLogger(__name__)
 
