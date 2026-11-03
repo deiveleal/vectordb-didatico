@@ -3,6 +3,7 @@ name = "vectordb-didatico"
 version = "0.1.0"
 description = "Versao didatica do pipeline arXiv -> busca semantica, em Python puro e sem API"
 readme = "README.md"
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "beautifulsoup4>=4.15.0",   # parse do HTML do arXiv
